@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Brenden\source\repos\Rubik-Rescue\build\CMakeFiles\265b7b6604f909f32da5b8e8387021b1\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{01B9B8A5-3F53-30CD-9F3F-87DCB221A01F}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
