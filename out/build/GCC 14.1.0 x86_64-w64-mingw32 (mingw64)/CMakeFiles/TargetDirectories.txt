@@ -1,3 +1,0 @@
-C:/Users/Brenden/source/repos/Rubik-Rescue/out/build/GCC 14.1.0 x86_64-w64-mingw32 (mingw64)/CMakeFiles/Rubik-Rescue.dir
-C:/Users/Brenden/source/repos/Rubik-Rescue/out/build/GCC 14.1.0 x86_64-w64-mingw32 (mingw64)/CMakeFiles/ALL_BUILD.dir
-C:/Users/Brenden/source/repos/Rubik-Rescue/out/build/GCC 14.1.0 x86_64-w64-mingw32 (mingw64)/CMakeFiles/ZERO_CHECK.dir
