@@ -3,36 +3,41 @@
 
 #undef main
 
-const uint32_t width = 1080;
-const uint32_t height = 720;
+const uint32_t SCREEN_WIDTH = 1080;
+const uint32_t SCREEN_HEIGHT = 720;
 
 int main()
 {
     SDL_Window* window = NULL;
     SDL_Surface* surface = NULL;
 
+    //If you cannot intialize SDL2, exit with error code    
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
-        std::cout << "Could not initialize SDL! SDL_Error: " << SDL_GetError() << "\n";
-    else
     {
-        window = SDL_CreateWindow("SDL Test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
-        if (window == NULL)
-            std::cout << "Window could not be created! SDL_Error: " << SDL_GetError() << "\n";
-        else
-        {
-            surface = SDL_GetWindowSurface(window);
-            SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0x00, 0xFF, 0xFF));
-            SDL_UpdateWindowSurface(window);
-            SDL_Event e;
-            bool running = true;
-            while (running)
-            {
-                while (SDL_PollEvent(&e))
-                    if (e.type == SDL_QUIT)
-                        running= false;
-            }
-        }
+        std::cout << "Could not initialize SDL! SDL_Error: " << SDL_GetError() << "\n";
+        return -1;
     }
+
+    window = SDL_CreateWindow("SDL Test", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_VULKAN);
+
+    //If you cannot create the window, exit with error code    
+    if (window == NULL)
+    {
+        std::cout << "Window could not be created! SDL_Error: " << SDL_GetError() << "\n";
+        return -1;
+    }
+
+    SDL_Event event;
+    bool running = true;
+
+    //Main loop
+    while (running)
+    {
+        while (SDL_PollEvent(&event))
+            if (event.type == SDL_QUIT)
+                running= false;
+    }
+
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;
