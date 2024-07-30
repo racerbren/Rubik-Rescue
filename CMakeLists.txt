@@ -13,13 +13,11 @@ endif()
 
 project(Rubik-Rescue)
 
-
-
 set(SDL_STATIC ON)
 
-add_subdirectory(thirdparty/SDL2)		#window opener
-add_subdirectory(thirdparty/glm)			        #math
-
+add_subdirectory(thirdparty/SDL2)
+add_subdirectory(thirdparty/glm)
+find_package(Vulkan REQUIRED)
 
 # MY_SOURCES is defined to be a list of all the source files for my game 
 # DON'T ADD THE SOURCES BY HAND, they are already added with this macro
@@ -55,6 +53,4 @@ if(MSVC) # If using the VS compiler...
 
 endif()
 
-target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/")
-
-target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glm SDL2-static)
+target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glm SDL2-static Vulkan::Vulkan)
