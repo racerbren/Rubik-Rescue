@@ -109,6 +109,23 @@ void renderApp::createInstance()
         std::cout << '\t' << extension.extensionName << '\n';
 }
 
+void renderApp::pickPhysicalDevice()
+{
+    //Graphics card is selected and stored as VkPhysicalDevice
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
+
+    //Check for available Vulkan supported devices
+    if (deviceCount == 0) 
+        throw std::runtime_error("Failed to find a GPU with Vulkan support!");
+    
+    //If there are available graphics cards, add them to the list of devices
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
+    
+}
+
 void renderApp::run()
 {
     initWindow();

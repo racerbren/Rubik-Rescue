@@ -25,6 +25,7 @@ private:
     void clean();
 
     void createInstance();
+    void pickPhysicalDevice();
 public:
     void run();
 };
