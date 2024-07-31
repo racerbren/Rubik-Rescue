@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 
 #include "renderApp.h"
+#include "vulkanDebugger.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE

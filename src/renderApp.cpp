@@ -6,13 +6,13 @@ void renderApp::initWindow()
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
         throw std::runtime_error(("Could not initialize SDL! SDL_Error: %s\n", SDL_GetError()));
 
-    window = SDL_CreateWindow("Vulkan Test", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_VULKAN);
+    mWindow = SDL_CreateWindow("Vulkan Test", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_VULKAN);
 
     //If you cannot create the window, exit with error code    
-    if (window == NULL)
+    if (mWindow == NULL)
         throw std::runtime_error(("Window could not be created! SDL_Error: %s\n", SDL_GetError()));
 
-    SDL_SetWindowResizable(window, SDL_FALSE);
+    SDL_SetWindowResizable(mWindow, SDL_FALSE);
 }
 
 void renderApp::initVulkan()
@@ -36,13 +36,17 @@ void renderApp::loop()
 
 void renderApp::clean()
 {
-    vkDestroyInstance(instance, nullptr);
-    SDL_DestroyWindow(window);
+    vkDestroyInstance(mInstance, nullptr);
+    SDL_DestroyWindow(mWindow);
     SDL_Quit();
 }
 
 void renderApp::createInstance()
 {
+    //Check for debugging tools
+    if (enableValidationLayers && !mDebugger.checkValidationLayerSupport())
+        throw std::runtime_error("Validation layers requested, but unavailable!\n");
+
     //Fill struct with application info (optional)
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -59,15 +63,15 @@ void renderApp::createInstance()
 
     //Get the names of Vulkan instance extensions required to create an SDL Vulkan Surface
     uint32_t sdlExtensionCount = 0;
-    SDL_Vulkan_GetInstanceExtensions(window, &sdlExtensionCount, nullptr);
+    SDL_Vulkan_GetInstanceExtensions(mWindow, &sdlExtensionCount, nullptr);
     std::vector<const char*> sdlExtensions(sdlExtensionCount);
-    SDL_Vulkan_GetInstanceExtensions(window, &sdlExtensionCount, sdlExtensions.data());
+    SDL_Vulkan_GetInstanceExtensions(mWindow, &sdlExtensionCount, sdlExtensions.data());
     createInfo.ppEnabledExtensionNames = sdlExtensions.data();
     createInfo.enabledExtensionCount = sdlExtensions.size();
     createInfo.enabledLayerCount = 0;
 
     //Create the Vulkan instance with all of the information we acquired and check if successfull
-    VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
+    VkResult result = vkCreateInstance(&createInfo, nullptr, &mInstance);
     if (result != VK_SUCCESS)
         throw std::runtime_error(("Failed to create Vulkan instance! Vulkan Result: %s\n", string_VkResult(result)));
 

@@ -7,14 +7,17 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <vector>
 
+#include "vulkanDebugger.h"
+
 const uint32_t SCREEN_WIDTH = 1080;
 const uint32_t SCREEN_HEIGHT = 720;
 
 class renderApp 
 {
 private:
-    SDL_Window* window = NULL;
-    VkInstance instance;
+    SDL_Window* mWindow = NULL;
+    VkInstance mInstance;
+    vulkanDebugger mDebugger;
 
     void initWindow();
     void initVulkan();
