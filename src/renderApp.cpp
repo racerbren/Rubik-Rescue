@@ -18,6 +18,7 @@ void renderApp::initWindow()
 void renderApp::initVulkan()
 {
     createInstance();
+    mDebugger.setUpDebugMessenger(mInstance, &mDebugger.createInfo, nullptr, &mDebugger.debugMessenger);
 }
 
 void renderApp::loop()
@@ -36,6 +37,9 @@ void renderApp::loop()
 
 void renderApp::clean()
 {
+    if (enableValidationLayers)
+        mDebugger.DestroyDebugUtilsMessengerEXT(mInstance, mDebugger.debugMessenger, nullptr);
+    
     vkDestroyInstance(mInstance, nullptr);
     SDL_DestroyWindow(mWindow);
     SDL_Quit();
@@ -45,7 +49,7 @@ void renderApp::createInstance()
 {
     //Check for debugging tools
     if (enableValidationLayers && !mDebugger.checkValidationLayerSupport())
-        throw std::runtime_error("Validation layers requested, but unavailable!\n");
+        throw std::runtime_error("Validation layers requested, but are unavailable!\n");
 
     //Fill struct with application info (optional)
     VkApplicationInfo appInfo{};
@@ -61,14 +65,34 @@ void renderApp::createInstance()
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
 
-    //Get the names of Vulkan instance extensions required to create an SDL Vulkan Surface
-    uint32_t sdlExtensionCount = 0;
-    SDL_Vulkan_GetInstanceExtensions(mWindow, &sdlExtensionCount, nullptr);
-    std::vector<const char*> sdlExtensions(sdlExtensionCount);
-    SDL_Vulkan_GetInstanceExtensions(mWindow, &sdlExtensionCount, sdlExtensions.data());
+    //Update createInfo struct with validation layers depending on debug or release mode
+    if (enableValidationLayers)
+    {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(mDebugger.validationLayers.size());
+        createInfo.ppEnabledLayerNames = mDebugger.validationLayers.data();
+    }
+    else
+        createInfo.enabledLayerCount = 0;
+
+    //Get the SDL instance extensions required for Vulkan
+    auto sdlExtensions = mDebugger.getRequiredExtensions();
     createInfo.ppEnabledExtensionNames = sdlExtensions.data();
-    createInfo.enabledExtensionCount = sdlExtensions.size();
-    createInfo.enabledLayerCount = 0;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(sdlExtensions.size());
+
+    //Create additional debug messenger
+    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+    if (enableValidationLayers) 
+    {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(mDebugger.validationLayers.size());
+        createInfo.ppEnabledLayerNames = mDebugger.validationLayers.data();
+        mDebugger.populateDebugMessengerCreateInfo(debugCreateInfo);
+        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
+    }
+    else 
+    {
+        createInfo.enabledLayerCount = 0;
+        createInfo.pNext = nullptr;
+    }
 
     //Create the Vulkan instance with all of the information we acquired and check if successfull
     VkResult result = vkCreateInstance(&createInfo, nullptr, &mInstance);
