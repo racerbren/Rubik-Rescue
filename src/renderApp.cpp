@@ -19,6 +19,7 @@ void renderApp::initVulkan()
 {
     createInstance();
     mDebugger.setUpDebugMessenger(mInstance, &mDebugger.createInfo, nullptr, &mDebugger.debugMessenger);
+    pickPhysicalDevice();
 }
 
 void renderApp::loop()
@@ -56,7 +57,7 @@ void renderApp::createInstance()
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "Rubik Rescue";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "No Engine";
+    appInfo.pEngineName = "Test Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = VK_API_VERSION_1_0;
 
@@ -123,7 +124,26 @@ void renderApp::pickPhysicalDevice()
     //If there are available graphics cards, add them to the list of devices
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
-    
+
+    //Iterate through list of available devices and query if each device is suitable.
+    //If it is then choose it as the GPU
+    for (const auto& device : devices) 
+    {
+        if (isDeviceSuitable(device)) 
+        {
+            physicalDevice = device;
+            break;
+        }
+    }
+
+    //If no devices are suitable, throw an exception
+    if (physicalDevice == VK_NULL_HANDLE) 
+        throw std::runtime_error("Failed to find a suitable GPU!");
+}
+
+bool renderApp::isDeviceSuitable(VkPhysicalDevice device)
+{
+    return true;
 }
 
 void renderApp::run()

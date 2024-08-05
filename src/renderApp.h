@@ -26,6 +26,7 @@ private:
 
     void createInstance();
     void pickPhysicalDevice();
+    bool isDeviceSuitable(VkPhysicalDevice device);
 public:
     void run();
 };
