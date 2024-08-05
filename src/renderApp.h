@@ -31,7 +31,9 @@ private:
     SDL_Window* mWindow = NULL;
     VkInstance mInstance;
     vulkanDebugger mDebugger;
-    VkPhysicalDevice mDevice;
+    VkDevice mDevice;
+    VkPhysicalDevice mPhysicalDevice;
+    VkQueue mGraphicsQueue;
 
     void initWindow();
     void initVulkan();
@@ -42,6 +44,7 @@ private:
     void pickPhysicalDevice();
     int rateDeviceSuitability(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+    void createLogicalDevice();
 public:
     void run();
 };

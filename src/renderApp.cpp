@@ -20,6 +20,7 @@ void renderApp::initVulkan()
     createInstance();
     mDebugger.setUpDebugMessenger(mInstance, &mDebugger.createInfo, nullptr, &mDebugger.debugMessenger);
     pickPhysicalDevice();
+    createLogicalDevice();
 }
 
 void renderApp::loop()
@@ -38,9 +39,14 @@ void renderApp::loop()
 
 void renderApp::clean()
 {
+    //Destroy logical device
+    vkDestroyDevice(mDevice, nullptr);
+
+    //If debugging active, destroy messenger
     if (enableValidationLayers)
         mDebugger.DestroyDebugUtilsMessengerEXT(mInstance, mDebugger.debugMessenger, nullptr);
     
+    //Destroy instance
     vkDestroyInstance(mInstance, nullptr);
     SDL_DestroyWindow(mWindow);
     SDL_Quit();
@@ -113,7 +119,7 @@ void renderApp::createInstance()
 void renderApp::pickPhysicalDevice()
 {
     //Graphics card is selected and stored as VkPhysicalDevice
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    mPhysicalDevice = VK_NULL_HANDLE;
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
 
@@ -142,10 +148,9 @@ void renderApp::pickPhysicalDevice()
     //second = device
     //Start at ending since multimap is sorted in ascending order
     if (candidates.rbegin()->first > 0) 
-        physicalDevice = candidates.rbegin()->second;
+        mPhysicalDevice = candidates.rbegin()->second;
     else 
         throw std::runtime_error("Failed to find a suitable GPU!");
-    mDevice = physicalDevice;
 }
 
 int renderApp::rateDeviceSuitability(VkPhysicalDevice device)
@@ -201,6 +206,47 @@ QueueFamilyIndices renderApp::findQueueFamilies(VkPhysicalDevice device)
     }
 
     return indices;
+}
+
+void renderApp::createLogicalDevice()
+{
+    QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice);
+
+    //Specify the details of the device queue struct
+    VkDeviceQueueCreateInfo queueCreateInfo{};
+    float queuePriority = 1.0f;
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+    queueCreateInfo.queueCount = 1;
+    queueCreateInfo.pQueuePriorities = &queuePriority;
+
+    //Specify the set of device features to use
+    VkPhysicalDeviceFeatures deviceFeatures{};
+
+    //Specify details of the device struct
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pQueueCreateInfos = &queueCreateInfo;
+    createInfo.queueCreateInfoCount = 1;
+    createInfo.pEnabledFeatures = &deviceFeatures;
+    createInfo.enabledExtensionCount = 0;
+
+    //Check for debugging
+    if (enableValidationLayers) 
+    {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(mDebugger.validationLayers.size());
+        createInfo.ppEnabledLayerNames = mDebugger.validationLayers.data();
+    } 
+    else
+        createInfo.enabledLayerCount = 0;
+    
+    //If creating logical device fails, throw exception
+    if (vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice) != VK_SUCCESS)
+        throw std::runtime_error("Failed to create logical device!");
+
+    //Retrieve queue handles for each queue family
+    //Index is 0 because we are only creating 1 queue from this family
+    vkGetDeviceQueue(mDevice, indices.graphicsFamily.value(), 0, &mGraphicsQueue);
 }
 
 void renderApp::run()
