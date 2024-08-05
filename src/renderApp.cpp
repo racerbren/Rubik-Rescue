@@ -145,10 +145,12 @@ void renderApp::pickPhysicalDevice()
         physicalDevice = candidates.rbegin()->second;
     else 
         throw std::runtime_error("Failed to find a suitable GPU!");
+    mDevice = physicalDevice;
 }
 
 int renderApp::rateDeviceSuitability(VkPhysicalDevice device)
 {
+
     //Query the device name, type, and supported version of Vulkan
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -167,11 +169,38 @@ int renderApp::rateDeviceSuitability(VkPhysicalDevice device)
     //Maximum possible size of textures affects graphics quality
     score += deviceProperties.limits.maxImageDimension2D;
 
-    //Device needs to support geometry shaders
-    if (!deviceFeatures.geometryShader)
+    //Query the queue families of the device
+    QueueFamilyIndices indices = findQueueFamilies(device);
+
+    //Device needs to support geometry shaders and the device needs to have a queue family
+    if (!deviceFeatures.geometryShader || !indices.isComplete())
         return 0;
 
     return score;
+}
+
+QueueFamilyIndices renderApp::findQueueFamilies(VkPhysicalDevice device)
+{
+    QueueFamilyIndices indices;
+
+    //Retrieve the list of queue families and their properties
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);   //This struct contains information about the type of operations that are supported
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+    //We must find a queue familyt that supports VK_QUEUE_GRAPHICS_BIT
+    int i = 0;
+    for (const auto& queueFamily : queueFamilies) 
+    {
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            indices.graphicsFamily = i;
+        if (indices.isComplete())
+            break;
+        i++;
+    }
+
+    return indices;
 }
 
 void renderApp::run()
