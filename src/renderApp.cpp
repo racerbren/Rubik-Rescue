@@ -127,23 +127,51 @@ void renderApp::pickPhysicalDevice()
 
     //Iterate through list of available devices and query if each device is suitable.
     //If it is then choose it as the GPU
+    //Use an ordered map to automatically sort candidates by increasing score
+    std::multimap<int, VkPhysicalDevice> candidates;
+
+    //Build the map of devices, querying the score of each device
     for (const auto& device : devices) 
     {
-        if (isDeviceSuitable(device)) 
-        {
-            physicalDevice = device;
-            break;
-        }
+        int score = rateDeviceSuitability(device);
+        candidates.insert(std::make_pair(score, device));
     }
 
-    //If no devices are suitable, throw an exception
-    if (physicalDevice == VK_NULL_HANDLE) 
+    //Check if the best candidate is suitable at all, if not then throw an exception
+    //first = score
+    //second = device
+    //Start at ending since multimap is sorted in ascending order
+    if (candidates.rbegin()->first > 0) 
+        physicalDevice = candidates.rbegin()->second;
+    else 
         throw std::runtime_error("Failed to find a suitable GPU!");
 }
 
-bool renderApp::isDeviceSuitable(VkPhysicalDevice device)
+int renderApp::rateDeviceSuitability(VkPhysicalDevice device)
 {
-    return true;
+    //Query the device name, type, and supported version of Vulkan
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+    //Query the device for optional features (texture compression, multiple viewports, etc.)
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+    int score = 0;
+
+    //Dedicated GPUs have a significant performance advantage
+    if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+        score += 1000;
+    }
+
+    //Maximum possible size of textures affects graphics quality
+    score += deviceProperties.limits.maxImageDimension2D;
+
+    //Device needs to support geometry shaders
+    if (!deviceFeatures.geometryShader)
+        return 0;
+
+    return score;
 }
 
 void renderApp::run()

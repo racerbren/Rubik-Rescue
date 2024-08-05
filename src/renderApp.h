@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_enum_string_helper.h>
 #include <vector>
+#include <map>
 
 #include "vulkanDebugger.h"
 
@@ -26,7 +27,7 @@ private:
 
     void createInstance();
     void pickPhysicalDevice();
-    bool isDeviceSuitable(VkPhysicalDevice device);
+    int rateDeviceSuitability(VkPhysicalDevice device);
 public:
     void run();
 };
