@@ -201,8 +201,12 @@ QueueFamilyIndices renderApp::findQueueFamilies(VkPhysicalDevice device)
     int i = 0;
     for (const auto& queueFamily : queueFamilies) 
     {
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, mSurface, &presentSupport);
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
             indices.graphicsFamily = i;
+        if (presentSupport)
+            indices.presentFamily = i;
         if (indices.isComplete())
             break;
         i++;

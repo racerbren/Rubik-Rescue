@@ -20,10 +20,11 @@ struct QueueFamilyIndices
 {
     //std::optional contains no value until we assign one to it. This is useful in case a queue family is unavailable
     std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
 
     bool isComplete()
     {
-        return graphicsFamily.has_value();
+        return graphicsFamily.has_value() && presentFamily.has_value();
     }
 };
 
