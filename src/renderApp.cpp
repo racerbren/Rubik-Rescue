@@ -45,6 +45,9 @@ void renderApp::clean()
     //If debugging active, destroy messenger
     if (enableValidationLayers)
         mDebugger.DestroyDebugUtilsMessengerEXT(mInstance, mDebugger.debugMessenger, nullptr);
+
+    //Destroy window surface
+    vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
     
     //Destroy instance
     vkDestroyInstance(mInstance, nullptr);
@@ -210,6 +213,7 @@ QueueFamilyIndices renderApp::findQueueFamilies(VkPhysicalDevice device)
 
 void renderApp::createLogicalDevice()
 {
+    //Query the queue families for the graphics card
     QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice);
 
     //Specify the details of the device queue struct
@@ -247,6 +251,12 @@ void renderApp::createLogicalDevice()
     //Retrieve queue handles for each queue family
     //Index is 0 because we are only creating 1 queue from this family
     vkGetDeviceQueue(mDevice, indices.graphicsFamily.value(), 0, &mGraphicsQueue);
+}
+
+void renderApp::createSurface()
+{
+    if (SDL_Vulkan_CreateSurface(mWindow, mInstance, &mSurface) != SDL_TRUE)
+        throw std::runtime_error("Failed to create window surface!");
 }
 
 void renderApp::run()

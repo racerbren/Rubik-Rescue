@@ -11,6 +11,8 @@
 
 #include "vulkanDebugger.h"
 
+#define VK_USE_PLATFORM_WIN32_KHR
+
 const uint32_t SCREEN_WIDTH = 1080;
 const uint32_t SCREEN_HEIGHT = 720;
 
@@ -34,6 +36,7 @@ private:
     VkDevice mDevice;
     VkPhysicalDevice mPhysicalDevice;
     VkQueue mGraphicsQueue;
+    VkSurfaceKHR mSurface;
 
     void initWindow();
     void initVulkan();
@@ -45,6 +48,7 @@ private:
     int rateDeviceSuitability(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
     void createLogicalDevice();
+    void createSurface();
 public:
     void run();
 };
