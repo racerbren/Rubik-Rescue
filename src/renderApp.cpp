@@ -19,6 +19,7 @@ void renderApp::initVulkan()
 {
     createInstance();
     mDebugger.setUpDebugMessenger(mInstance, &mDebugger.createInfo, nullptr, &mDebugger.debugMessenger);
+    createSurface();
     pickPhysicalDevice();
     createLogicalDevice();
 }

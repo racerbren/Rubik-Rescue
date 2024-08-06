@@ -36,7 +36,7 @@ private:
     VkInstance mInstance;
     vulkanDebugger mDebugger;
     VkDevice mDevice;
-    VkPhysicalDevice mPhysicalDevice;
+    VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
     VkQueue mGraphicsQueue;
     VkSurfaceKHR mSurface;
     VkQueue mPresentQueue;
