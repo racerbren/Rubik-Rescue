@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include <optional>
+#include <set>
 
 #include "vulkanDebugger.h"
 
@@ -38,6 +39,7 @@ private:
     VkPhysicalDevice mPhysicalDevice;
     VkQueue mGraphicsQueue;
     VkSurfaceKHR mSurface;
+    VkQueue mPresentQueue;
 
     void initWindow();
     void initVulkan();

@@ -197,7 +197,8 @@ QueueFamilyIndices renderApp::findQueueFamilies(VkPhysicalDevice device)
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);   //This struct contains information about the type of operations that are supported
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-    //We must find a queue familyt that supports VK_QUEUE_GRAPHICS_BIT
+    //We must find a queue family that supports VK_QUEUE_GRAPHICS_BIT
+    //We must also find a queue family that supports window surface presentation
     int i = 0;
     for (const auto& queueFamily : queueFamilies) 
     {
@@ -220,13 +221,22 @@ void renderApp::createLogicalDevice()
     //Query the queue families for the graphics card
     QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice);
 
+    //Create a set of all unique queue families that are necessary for required queues
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+
     //Specify the details of the device queue struct
-    VkDeviceQueueCreateInfo queueCreateInfo{};
     float queuePriority = 1.0f;
-    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-    queueCreateInfo.queueCount = 1;
-    queueCreateInfo.pQueuePriorities = &queuePriority;
+    for (uint32_t queueFamily : uniqueQueueFamilies)
+    {
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = queueFamily;
+        queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
 
     //Specify the set of device features to use
     VkPhysicalDeviceFeatures deviceFeatures{};
@@ -234,8 +244,10 @@ void renderApp::createLogicalDevice()
     //Specify details of the device struct
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pQueueCreateInfos = &queueCreateInfo;
-    createInfo.queueCreateInfoCount = 1;
+
+    //Point to the vector of VkDeviceQueueCreateInfos
+    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.pEnabledFeatures = &deviceFeatures;
     createInfo.enabledExtensionCount = 0;
 
@@ -255,10 +267,12 @@ void renderApp::createLogicalDevice()
     //Retrieve queue handles for each queue family
     //Index is 0 because we are only creating 1 queue from this family
     vkGetDeviceQueue(mDevice, indices.graphicsFamily.value(), 0, &mGraphicsQueue);
+    vkGetDeviceQueue(mDevice, indices.presentFamily.value(), 0, &mPresentQueue);
 }
 
 void renderApp::createSurface()
 {
+    //Create a window surface and check if it was successful
     if (SDL_Vulkan_CreateSurface(mWindow, mInstance, &mSurface) != SDL_TRUE)
         throw std::runtime_error("Failed to create window surface!");
 }
