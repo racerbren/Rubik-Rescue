@@ -41,6 +41,11 @@ private:
     VkSurfaceKHR mSurface;
     VkQueue mPresentQueue;
 
+    const std::vector<const char*> deviceExtensions = 
+    {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
     void initWindow();
     void initVulkan();
     void loop();
@@ -52,6 +57,7 @@ private:
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
     void createLogicalDevice();
     void createSurface();
+    bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 public:
     void run();
 };

@@ -171,9 +171,8 @@ int renderApp::rateDeviceSuitability(VkPhysicalDevice device)
     int score = 0;
 
     //Dedicated GPUs have a significant performance advantage
-    if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+    if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
         score += 1000;
-    }
 
     //Maximum possible size of textures affects graphics quality
     score += deviceProperties.limits.maxImageDimension2D;
@@ -181,8 +180,8 @@ int renderApp::rateDeviceSuitability(VkPhysicalDevice device)
     //Query the queue families of the device
     QueueFamilyIndices indices = findQueueFamilies(device);
 
-    //Device needs to support geometry shaders and the device needs to have a queue family
-    if (!deviceFeatures.geometryShader || !indices.isComplete())
+    //Device needs to support geometry shaders and the device needs to have a queue family and the device needs to support swap chain extension
+    if (!deviceFeatures.geometryShader || !indices.isComplete() || !checkDeviceExtensionSupport(device))
         return 0;
 
     return score;
@@ -276,6 +275,11 @@ void renderApp::createSurface()
     //Create a window surface and check if it was successful
     if (SDL_Vulkan_CreateSurface(mWindow, mInstance, &mSurface) != SDL_TRUE)
         throw std::runtime_error("Failed to create window surface!");
+}
+
+bool renderApp::checkDeviceExtensionSupport(VkPhysicalDevice device)
+{
+    return true;
 }
 
 void renderApp::run()
