@@ -29,6 +29,18 @@ struct QueueFamilyIndices
     }
 };
 
+struct SwapChainSupportDetails 
+{
+    //Surface capabilities such as min/max number of images in swap chain or min/max width/height of images)
+    VkSurfaceCapabilitiesKHR capabilities;
+
+    //Surface formats including pixel format and color space
+    std::vector<VkSurfaceFormatKHR> formats;
+
+    //Available presentation modes
+    std::vector<VkPresentModeKHR> presentModes;
+};
+
 class renderApp 
 {
 private:
@@ -58,6 +70,7 @@ private:
     void createLogicalDevice();
     void createSurface();
     bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 public:
     void run();
 };

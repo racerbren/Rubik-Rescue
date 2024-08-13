@@ -180,8 +180,16 @@ int renderApp::rateDeviceSuitability(VkPhysicalDevice device)
     //Query the queue families of the device
     QueueFamilyIndices indices = findQueueFamilies(device);
 
+    bool extensionsSupported = checkDeviceExtensionSupport(device);
+    bool validSwapChain = false;
+    if (extensionsSupported)
+    {
+        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+        validSwapChain = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+    }
+
     //Device needs to support geometry shaders and the device needs to have a queue family and the device needs to support swap chain extension
-    if (!deviceFeatures.geometryShader || !indices.isComplete() || !checkDeviceExtensionSupport(device))
+    if (!deviceFeatures.geometryShader || !indices.isComplete() || !extensionsSupported || !validSwapChain)
         return 0;
 
     return score;
@@ -249,7 +257,8 @@ void renderApp::createLogicalDevice()
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.pEnabledFeatures = &deviceFeatures;
-    createInfo.enabledExtensionCount = 0;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(mDeviceExtensions.size()); //These last two calls enable the swap chain extension
+    createInfo.ppEnabledExtensionNames = mDeviceExtensions.data();                      //
 
     //Check for debugging
     if (enableValidationLayers) 
@@ -296,6 +305,35 @@ bool renderApp::checkDeviceExtensionSupport(VkPhysicalDevice device)
         requiredExtensions.erase(extension.extensionName);
     
     return requiredExtensions.empty();
+}
+
+SwapChainSupportDetails renderApp::querySwapChainSupport(VkPhysicalDevice device)
+{
+    SwapChainSupportDetails details;
+
+    //Determine supported surface capabilities taking into account the VkPhysicalDevice and the VkSurfaceKHR
+    //This is because the device and the surface are the core components of the swap chain
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, mSurface, &details.capabilities);
+
+    //Determine device surface formats
+    uint32_t formatCount;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, nullptr);
+    if (formatCount != 0)
+    {
+        details.formats.resize(formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, details.formats.data());
+    }
+
+    //Determine available presentation modes
+    uint32_t presentModeCount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, nullptr);
+    if(presentModeCount != 0)
+    {
+        details.presentModes.resize(formatCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, details.presentModes.data());
+    }
+
+    return details;
 }
 
 void renderApp::run()
