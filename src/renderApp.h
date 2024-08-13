@@ -41,7 +41,7 @@ private:
     VkSurfaceKHR mSurface;
     VkQueue mPresentQueue;
 
-    const std::vector<const char*> deviceExtensions = 
+    const std::vector<const char*> mDeviceExtensions = 
     {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };

@@ -279,7 +279,23 @@ void renderApp::createSurface()
 
 bool renderApp::checkDeviceExtensionSupport(VkPhysicalDevice device)
 {
-    return true;
+    //Record the number of available extensions supported by the device
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+    //Record the available extensions into a vector
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+    //Use a set to represent unconfirmed required extensions.
+    //This allows us to erase extensions that are required based off of the extensions that are available by the device.
+    std::set<std::string> requiredExtensions(mDeviceExtensions.begin(), mDeviceExtensions.end());
+
+    //Each enumerated extension has a name corresponding to its type. This can be used to "elimnate" the swap chain extension that we require
+    for (const auto& extension : availableExtensions)
+        requiredExtensions.erase(extension.extensionName);
+    
+    return requiredExtensions.empty();
 }
 
 void renderApp::run()
