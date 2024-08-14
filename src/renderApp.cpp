@@ -336,6 +336,56 @@ SwapChainSupportDetails renderApp::querySwapChainSupport(VkPhysicalDevice device
     return details;
 }
 
+VkSurfaceFormatKHR renderApp::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+{
+    for (const auto& availableFormat : availableFormats)
+        //Look for format with 32 bits of of color per pixel in SRGB space
+        //Also check for SRGB color space support
+        if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+            return availableFormat;
+
+    //If neither setting is there, return the first available format
+    return availableFormats[0];
+}
+
+VkPresentModeKHR renderApp::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+{
+    //Look for triple buffering present mode which has less latency issues than standard v-sync but still avoids tearing
+    for (const auto& availablePresentMode : availablePresentModes)
+        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+            return availablePresentMode;
+
+    //Similar to traditional v-sync in video games
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D renderApp::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+{
+    //If the current extent is not at the maximum value of uint32_t then return it
+    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+        return capabilities.currentExtent;
+    else
+    {
+        //Retrieve and record the width and height of the SDL frame buffer
+        int width, height;
+        SDL_Vulkan_GetDrawableSize(mWindow, &width, &height);
+
+        //Cast the width and height of the frame buffer to uint32_t
+        VkExtent2D actualExtent = 
+        {
+            static_cast<uint32_t>(width),
+            static_cast<uint32_t>(height)
+        };
+
+        //Clamp the actual extent of the width and height to be within the supported bounds of the implementation
+        actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+        //Return the new extent of the image
+        return actualExtent;
+    }
+}
+
 void renderApp::run()
 {
     initWindow();

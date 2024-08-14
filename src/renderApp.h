@@ -9,6 +9,8 @@
 #include <map>
 #include <optional>
 #include <set>
+#include <limits>
+#include <algorithm>
 
 #include "vulkanDebugger.h"
 
@@ -70,7 +72,10 @@ private:
     void createLogicalDevice();
     void createSurface();
     bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);\
+    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);    //Surface format (color depth)
+    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);     //Presentation mode (conditions for swapping images)
+    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);                              //Swap extent (resolution of swap chain images)
 public:
     void run();
 };
