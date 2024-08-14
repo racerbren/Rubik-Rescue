@@ -22,6 +22,7 @@ void renderApp::initVulkan()
     createSurface();
     pickPhysicalDevice();
     createLogicalDevice();
+    createSwapChain();
 }
 
 void renderApp::loop()
@@ -40,6 +41,9 @@ void renderApp::loop()
 
 void renderApp::clean()
 {
+    //Destroy swap chain
+    vkDestroySwapchainKHR(mDevice, mSwapChain, nullptr);
+
     //Destroy logical device
     vkDestroyDevice(mDevice, nullptr);
 
@@ -384,6 +388,67 @@ VkExtent2D renderApp::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilit
         //Return the new extent of the image
         return actualExtent;
     }
+}
+
+void renderApp::createSwapChain()
+{
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(mPhysicalDevice);
+
+    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+    VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+
+    //Specify the minimum number of images in the swap chain as the minimum plus one. This is to avoid waiting for the driver to finish internal operations
+    uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+
+    if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
+        imageCount = swapChainSupport.capabilities.maxImageCount;
+
+    VkSwapchainCreateInfoKHR createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = mSurface;                                      //Specify the surface to tie the swap chain to
+    createInfo.minImageCount = imageCount;
+    createInfo.imageFormat = surfaceFormat.format;
+    createInfo.imageColorSpace = surfaceFormat.colorSpace;
+    createInfo.imageExtent = extent;
+    createInfo.imageArrayLayers = 1;                                    //Specify the amount of layers each image consists of
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;        //Specify what kind of operations to use the images in the swap chain for (render directly to them using color attachment bit)
+                                                                        //Use VK_IMAGE_USAGE_TRANSFER_DST_BIT and a memory operation for post processing and rendering to an image first
+
+    //Specify how to handle swap chain images that will be used across multiple queue families
+    QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice);
+    uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+    if (indices.graphicsFamily != indices.presentFamily)
+    {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;   //Images can be used across multiple queue families without explicit ownership transfer
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+    }
+    else
+    {
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE; //An image is owned by one queue family at a time and ownership must be explicitly transferred. Best performance
+        createInfo.queueFamilyIndexCount = 0;
+        createInfo.pQueueFamilyIndices = nullptr;
+    }
+
+    createInfo.preTransform = swapChainSupport.capabilities.currentTransform; //Rotation, translation of image if supported. Current transform is no change
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;            // Specify if the alpha channel should be used for blending with other windows
+    createInfo.presentMode = presentMode;
+    createInfo.clipped = VK_TRUE;                                             //Ignore the color of blocked/obscured pixels
+    createInfo.oldSwapchain = VK_NULL_HANDLE;                                 //It is possible for a swwap chain to become invalid or unoptimized while the application is running (i.e. window resizing)
+
+    if (vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &mSwapChain) != VK_SUCCESS)
+        throw std::runtime_error("Failed to create swap chain!");
+
+    //Retrieve swap chain images
+    //Query the final number of images, resize the container, and query again to retrieve the handles
+    vkGetSwapchainImagesKHR(mDevice, mSwapChain, &imageCount, nullptr);
+    mSwapChainImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(mDevice, mSwapChain, &imageCount, mSwapChainImages.data());
+
+    //Store image format and extent as member variables for future use 
+    mSwapChainImageFormat = surfaceFormat.format;
+    mSwapChainExtent = extent;
 }
 
 void renderApp::run()

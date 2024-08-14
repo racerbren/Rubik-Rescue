@@ -54,6 +54,10 @@ private:
     VkQueue mGraphicsQueue;
     VkSurfaceKHR mSurface;
     VkQueue mPresentQueue;
+    VkSwapchainKHR mSwapChain;
+    std::vector<VkImage> mSwapChainImages;
+    VkFormat mSwapChainImageFormat;
+    VkExtent2D mSwapChainExtent; 
 
     const std::vector<const char*> mDeviceExtensions = 
     {
@@ -76,6 +80,7 @@ private:
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);    //Surface format (color depth)
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);     //Presentation mode (conditions for swapping images)
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);                              //Swap extent (resolution of swap chain images)
+    void createSwapChain();
 public:
     void run();
 };
