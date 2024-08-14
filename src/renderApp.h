@@ -83,6 +83,7 @@ private:
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);                              //Swap extent (resolution of swap chain images)
     void createSwapChain();
     void createImageViews();
+    void createGraphicsPipeline();
 public:
     void run();
 };

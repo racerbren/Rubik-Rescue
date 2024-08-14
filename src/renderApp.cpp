@@ -24,6 +24,7 @@ void renderApp::initVulkan()
     createLogicalDevice();
     createSwapChain();
     createImageViews();
+    createGraphicsPipeline();
 }
 
 void renderApp::loop()
@@ -486,6 +487,11 @@ void renderApp::createImageViews()
         if (vkCreateImageView(mDevice, &createInfo, nullptr, &mSwapChainImageViews[i]) != VK_SUCCESS)
             throw std::runtime_error("Failed to create image views!");
     }
+}
+
+void renderApp::createGraphicsPipeline()
+{
+    
 }
 
 void renderApp::run()
