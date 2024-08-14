@@ -57,7 +57,8 @@ private:
     VkSwapchainKHR mSwapChain;
     std::vector<VkImage> mSwapChainImages;
     VkFormat mSwapChainImageFormat;
-    VkExtent2D mSwapChainExtent; 
+    VkExtent2D mSwapChainExtent;
+    std::vector<VkImageView> mSwapChainImageViews; 
 
     const std::vector<const char*> mDeviceExtensions = 
     {
@@ -81,6 +82,7 @@ private:
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);     //Presentation mode (conditions for swapping images)
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);                              //Swap extent (resolution of swap chain images)
     void createSwapChain();
+    void createImageViews();
 public:
     void run();
 };

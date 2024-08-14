@@ -23,6 +23,7 @@ void renderApp::initVulkan()
     pickPhysicalDevice();
     createLogicalDevice();
     createSwapChain();
+    createImageViews();
 }
 
 void renderApp::loop()
@@ -41,6 +42,10 @@ void renderApp::loop()
 
 void renderApp::clean()
 {
+    //Destroy all of the image views
+    for (auto imageView : mSwapChainImageViews)
+        vkDestroyImageView(mDevice, imageView, nullptr);
+
     //Destroy swap chain
     vkDestroySwapchainKHR(mDevice, mSwapChain, nullptr);
 
@@ -449,6 +454,38 @@ void renderApp::createSwapChain()
     //Store image format and extent as member variables for future use 
     mSwapChainImageFormat = surfaceFormat.format;
     mSwapChainExtent = extent;
+}
+
+void renderApp::createImageViews()
+{
+    mSwapChainImageViews.resize(mSwapChainImages.size());
+    for (size_t i = 0; i < mSwapChainImages.size(); i++)
+    {
+        VkImageViewCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = mSwapChainImages[i];
+
+        //How the image data should be interpreted
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;    //1D, 2D, 3D textures. Cubemaps. etc.
+        createInfo.format = mSwapChainImageFormat;
+
+        //Allows for color channel swizzling. This is the default color mapping
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        //Describe the image's purpose and which part of the image to access. In this case they are used as color targets without mipmapping or multiple layers
+        //Stereographics applications would require more than one layer
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(mDevice, &createInfo, nullptr, &mSwapChainImageViews[i]) != VK_SUCCESS)
+            throw std::runtime_error("Failed to create image views!");
+    }
 }
 
 void renderApp::run()
