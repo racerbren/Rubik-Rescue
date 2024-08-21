@@ -44,6 +44,9 @@ void renderApp::loop()
 
 void renderApp::clean()
 {
+    //Destory the graphics pipeline
+    vkDestroyPipeline(mDevice, mGraphicsPipeline, nullptr);
+
     //Destroy the graphics pipeline layout
     vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
 
@@ -613,6 +616,28 @@ void renderApp::createGraphicsPipeline()
 
     if (vkCreatePipelineLayout(mDevice, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
         throw std::runtime_error("Failed to create pipeline layout!");
+
+    //Comnbine all of the structures and pipeline states to create a graphics pipeline using a create info struct
+    VkGraphicsPipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.stageCount = 2;
+    pipelineInfo.pStages = shaderStages;
+    pipelineInfo.pVertexInputState = &vertexInputInfo;
+    pipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
+    pipelineInfo.pViewportState = &viewportStateInfo;
+    pipelineInfo.pRasterizationState = &rasterizationInfo;
+    pipelineInfo.pMultisampleState = &multisamplingInfo;
+    pipelineInfo.pDepthStencilState = nullptr; // Optional: for depth stencil buffers only
+    pipelineInfo.pColorBlendState = &colorBlendingInfo;
+    pipelineInfo.pDynamicState = &dynamicStateInfo;
+    pipelineInfo.layout = mPipelineLayout;
+    pipelineInfo.renderPass = mRenderPass;
+    pipelineInfo.subpass = 0;
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional: used to derive an existing pipeline
+    pipelineInfo.basePipelineIndex = -1; // Optional
+
+    if (vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mGraphicsPipeline) != VK_SUCCESS)
+        throw std::runtime_error("failed to create graphics pipeline!");
 
     //Destroy shader modules
     vkDestroyShaderModule(mDevice, vertShaderModule, nullptr);

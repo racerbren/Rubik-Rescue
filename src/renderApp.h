@@ -62,6 +62,7 @@ private:
     std::vector<VkImageView> mSwapChainImageViews;
     VkRenderPass mRenderPass;
     VkPipelineLayout mPipelineLayout;
+    VkPipeline mGraphicsPipeline;
 
     const std::vector<const char*> mDeviceExtensions = 
     {
