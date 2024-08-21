@@ -88,6 +88,7 @@ private:
     void createGraphicsPipeline();
     static std::vector<char> readFile(const std::string& filename);
     VkShaderModule createShaderModule(const std::vector<char>& code);
+    void createRenderPass();
 public:
     void run();
 };

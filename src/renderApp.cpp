@@ -24,6 +24,7 @@ void renderApp::initVulkan()
     createLogicalDevice();
     createSwapChain();
     createImageViews();
+    createRenderPass();
     createGraphicsPipeline();
 }
 
@@ -648,6 +649,24 @@ VkShaderModule renderApp::createShaderModule(const std::vector<char>& code)
         throw std::runtime_error("Failed to create shader module!");
 
     return shaderModule;
+}
+
+void renderApp::createRenderPass()
+{
+    VkAttachmentDescription colorAttachment{};                  //Only use one color buffer attachment represented by an image from the swap chain
+    colorAttachment.format = mSwapChainImageFormat;
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;            //Change for multisampling
+
+    //This applies to color buffer operations before and after rendering
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;       //Clear the attachment data to a constant at the start. Clears framebuffer to black before drawing a new fram
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;     //Rendered contents are stored in memory to be read later. This allows us to draw the triangle to the screen
+
+    //This applies to stencil data, but we are not using a stencil buffer so we do not care
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;      //We do not care about the previous image's layout since we will clear it anyways
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;  //We want the image to be ready for presentation after rendering using the swap chain
 }
 
 void renderApp::run()
