@@ -491,7 +491,69 @@ void renderApp::createImageViews()
 
 void renderApp::createGraphicsPipeline()
 {
-    
+    //Load shader files
+    auto vertShaderCode = readFile("shaders/default.vert");
+    auto fragShaderCode = readFile("shaders/default.frag");
+
+    //Create shader modules (wrapper for shader bytecode)
+    VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+    VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+
+    //Create shader stage for graphics pipeline for vertex shader
+    VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vertShaderStageInfo.module = vertShaderModule;
+    vertShaderStageInfo.pName = "main";     //The invokable function, AKA the entrypoint, which can be used to differentiate between multiple shaders combined in one shader module
+
+    //Create shader stage for graphics pipeline for fragment shader
+    VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStageInfo.module = fragShaderModule;
+    fragShaderStageInfo.pName = "main";
+
+    //Array holding the shader stage info that will be referenced at pipeline creation
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+
+    //Destroy shader modules
+    vkDestroyShaderModule(mDevice, vertShaderModule, nullptr);
+    vkDestroyShaderModule(mDevice, fragShaderModule, nullptr);
+}
+
+std::vector<char> renderApp::readFile(const std::string& filename)
+{
+    //Start reading the file At The End, in binary
+    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+    if (!file.is_open())
+        throw std::runtime_error(("Failed to open file: %s", filename));
+
+    //We start at the end to determine the size of the file by the read position. Then we allocate a buffer
+    size_t fileSize = (size_t)file.tellg();
+    std::vector<char> buffer(fileSize);
+
+    //Go back to beginning of file and read it into the buffer
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+
+    //Close file, return bytes
+    file.close();
+    return buffer;
+}
+
+VkShaderModule renderApp::createShaderModule(const std::vector<char>& code)
+{
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = code.size();
+    //Bytecode pointer is a uint32_t, but we have a char pointer so we must cast it to uint32_t
+    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+    VkShaderModule shaderModule;
+    if (vkCreateShaderModule(mDevice, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+        throw std::runtime_error("Failed to create shader module!");
+
+    return shaderModule;
 }
 
 void renderApp::run()
