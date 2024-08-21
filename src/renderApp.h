@@ -59,7 +59,8 @@ private:
     std::vector<VkImage> mSwapChainImages;
     VkFormat mSwapChainImageFormat;
     VkExtent2D mSwapChainExtent;
-    std::vector<VkImageView> mSwapChainImageViews; 
+    std::vector<VkImageView> mSwapChainImageViews;
+    VkPipelineLayout mPipelineLayout;
 
     const std::vector<const char*> mDeviceExtensions = 
     {

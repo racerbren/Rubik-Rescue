@@ -43,6 +43,9 @@ void renderApp::loop()
 
 void renderApp::clean()
 {
+    //Destroy the graphics pipeline layout
+    vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
+
     //Destroy all of the image views
     for (auto imageView : mSwapChainImageViews)
         vkDestroyImageView(mDevice, imageView, nullptr);
@@ -515,6 +518,97 @@ void renderApp::createGraphicsPipeline()
 
     //Array holding the shader stage info that will be referenced at pipeline creation
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+
+    //Describes the format of vertex data which will be passed to the vertex shader
+    //Binding is the spacing between data and whether the data is per-vertex or per-instance(instancing)
+    //Attributes is the type of attributes passed to the vertex shader, the binding to load them from, and at which offset
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.vertexBindingDescriptionCount = 0;
+    vertexInputInfo.pVertexBindingDescriptions = nullptr; //Optional: point to an array of structs describing details for loading vertex data
+    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    vertexInputInfo.pVertexAttributeDescriptions = nullptr; //Optional
+
+    //Describes what kind of geometry will be drawn (topology) and if primitive restart should be enabled
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
+    inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;   //Form a triangle from every every 3 vertices without reuse
+    inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+
+    //We are using dynamic viewports and scissor rectangles, so we only need to specify the count at pipeline creation
+    //They will later be set up at draw time
+    VkPipelineViewportStateCreateInfo viewportStateInfo{};
+    viewportStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportStateInfo.viewportCount = 1;
+    viewportStateInfo.scissorCount = 1;
+
+    //The rasterization state takes the vertices from the vertex shader and turns them into fragments to be colored by the fragment shader
+    VkPipelineRasterizationStateCreateInfo rasterizationInfo{};
+    rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizationInfo.depthClampEnable = VK_FALSE;         //If true, this clamps objects outside the near and far plane instead of discarding them. Useful for depth/shadow maps
+    rasterizationInfo.rasterizerDiscardEnable = VK_FALSE;  //If true, geometry never passes through rasterization. Essentially disables output to the framebuffer
+    rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;  //Determines how fragments are generated for geometry. In this case fill the polygon with fragments
+    rasterizationInfo.lineWidth = 1.0f;                    //Describes the thickeness of lines in terms of number of fragments
+    rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;    //Determine the type of face culling to use. Here we cull the back face
+    rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE; //Specifies the vertex order for faces to be considered front facing
+    rasterizationInfo.depthBiasEnable = VK_FALSE;          //Sometimes used for shadow mapping
+    rasterizationInfo.depthBiasConstantFactor = 0.0f;      //Optional
+    rasterizationInfo.depthBiasClamp = 0.0f;               //Optional
+    rasterizationInfo.depthBiasSlopeFactor = 0.0f;         //Optional
+
+    //Configure multisampling. 
+    VkPipelineMultisampleStateCreateInfo multisamplingInfo{};
+    multisamplingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisamplingInfo.sampleShadingEnable = VK_FALSE;
+    multisamplingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisamplingInfo.minSampleShading = 1.0f; // Optional
+    multisamplingInfo.pSampleMask = nullptr; // Optional
+    multisamplingInfo.alphaToCoverageEnable = VK_FALSE; // Optional
+    multisamplingInfo.alphaToOneEnable = VK_FALSE; // Optional
+
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.blendEnable = VK_FALSE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+
+    VkPipelineColorBlendStateCreateInfo colorBlendingInfo{};
+    colorBlendingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlendingInfo.logicOpEnable = VK_FALSE;
+    colorBlendingInfo.logicOp = VK_LOGIC_OP_COPY; // Optional
+    colorBlendingInfo.attachmentCount = 1;
+    colorBlendingInfo.pAttachments = &colorBlendAttachment;
+    colorBlendingInfo.blendConstants[0] = 0.0f; // Optional
+    colorBlendingInfo.blendConstants[1] = 0.0f; // Optional
+    colorBlendingInfo.blendConstants[2] = 0.0f; // Optional
+    colorBlendingInfo.blendConstants[3] = 0.0f; // Optional
+
+    //Dynamic states specify the pipeline states that are not baked into the pipeline and can be changed at draw time without recreating the pipeline
+    std::vector<VkDynamicState> dynamicStates = 
+    {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR
+    };
+    //This allows for a more flexible set up
+    VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
+    dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+    dynamicStateInfo.pDynamicStates = dynamicStates.data();
+
+    //Used to specify uniform values for shaders
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = 0; // Optional
+    pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
+    pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+    pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+    if (vkCreatePipelineLayout(mDevice, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
+        throw std::runtime_error("Failed to create pipeline layout!");
 
     //Destroy shader modules
     vkDestroyShaderModule(mDevice, vertShaderModule, nullptr);
