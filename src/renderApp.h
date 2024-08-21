@@ -60,6 +60,7 @@ private:
     VkFormat mSwapChainImageFormat;
     VkExtent2D mSwapChainExtent;
     std::vector<VkImageView> mSwapChainImageViews;
+    VkRenderPass mRenderPass;
     VkPipelineLayout mPipelineLayout;
 
     const std::vector<const char*> mDeviceExtensions = 

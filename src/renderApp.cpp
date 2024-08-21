@@ -47,6 +47,9 @@ void renderApp::clean()
     //Destroy the graphics pipeline layout
     vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
 
+    //Destroy render pass
+    vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
+
     //Destroy all of the image views
     for (auto imageView : mSwapChainImageViews)
         vkDestroyImageView(mDevice, imageView, nullptr);
@@ -667,6 +670,27 @@ void renderApp::createRenderPass()
 
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;      //We do not care about the previous image's layout since we will clear it anyways
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;  //We want the image to be ready for presentation after rendering using the swap chain
+
+    //Reference to the color buffer attachment
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;  //Specify which attachment to reference in the attachment descriptions array by its index
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;   //Specify which layout the attachment should have during a subpass that uses it. Optimal gives the best performance
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    //Specify reference to color attachment
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+
+    if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS)
+        throw std::runtime_error("Failed to create a render pass!");
 }
 
 void renderApp::run()
