@@ -502,8 +502,8 @@ void renderApp::createImageViews()
 void renderApp::createGraphicsPipeline()
 {
     //Load shader files
-    auto vertShaderCode = readFile("shaders/default.vert");
-    auto fragShaderCode = readFile("shaders/default.frag");
+    auto vertShaderCode = readFile("../../../../shaders/vert.spv");
+    auto fragShaderCode = readFile("../../../../shaders/frag.spv");
 
     //Create shader modules (wrapper for shader bytecode)
     VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
@@ -649,7 +649,7 @@ std::vector<char> renderApp::readFile(const std::string& filename)
     //Start reading the file At The End, in binary
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
     if (!file.is_open())
-        throw std::runtime_error(("Failed to open file: %s", filename));
+        throw std::runtime_error("Failed to open file!");
 
     //We start at the end to determine the size of the file by the read position. Then we allocate a buffer
     size_t fileSize = (size_t)file.tellg();
