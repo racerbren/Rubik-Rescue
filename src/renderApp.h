@@ -63,6 +63,7 @@ private:
     VkRenderPass mRenderPass;
     VkPipelineLayout mPipelineLayout;
     VkPipeline mGraphicsPipeline;
+    std::vector<VkFramebuffer> mSwapChainFramebuffers;
 
     const std::vector<const char*> mDeviceExtensions = 
     {
@@ -91,6 +92,7 @@ private:
     static std::vector<char> readFile(const std::string& filename);
     VkShaderModule createShaderModule(const std::vector<char>& code);
     void createRenderPass();
+    void createFramebuffers();
 public:
     void run();
 };
