@@ -27,6 +27,8 @@ void renderApp::initVulkan()
     createRenderPass();
     createGraphicsPipeline();
     createFramebuffers();
+    createCommandPool();
+    createCommandBuffer();
 }
 
 void renderApp::loop()
@@ -45,6 +47,9 @@ void renderApp::loop()
 
 void renderApp::clean()
 {
+    //Destroy the command pool
+    vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
+
     //Loop through all framebuffers in the swap chain and destroy them
     for (auto framebuffer : mSwapChainFramebuffers)
         vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
@@ -744,6 +749,24 @@ void renderApp::createFramebuffers()
         if (vkCreateFramebuffer(mDevice, &framebufferInfo, nullptr, &mSwapChainFramebuffers[i]) != VK_SUCCESS)
             throw std::runtime_error("Failed to create framebuffer!");
     }
+}
+
+void renderApp::createCommandPool()
+{
+    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(mPhysicalDevice);
+    VkCommandPoolCreateInfo commandPoolCreateInfo{};
+    commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;      //Allow command buffers to be rerecorded individually, without this flag they all have to be reset together. 
+                                                                                        //We need to record a command buffer every frame which means we want to reswet it and rerecord over it.
+    commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value(); //Record commands for drawing => choose graphics family
+
+    if (vkCreateCommandPool(mDevice, &commandPoolCreateInfo, nullptr, &mCommandPool))
+        throw std::runtime_error("Failed to create command pool!");
+}
+
+void renderApp::createCommandBuffer()
+{
+
 }
 
 void renderApp::run()

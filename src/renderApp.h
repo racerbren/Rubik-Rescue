@@ -64,6 +64,8 @@ private:
     VkPipelineLayout mPipelineLayout;
     VkPipeline mGraphicsPipeline;
     std::vector<VkFramebuffer> mSwapChainFramebuffers;
+    VkCommandPool mCommandPool;
+    VkCommandBuffer mCommandBuffer;
 
     const std::vector<const char*> mDeviceExtensions = 
     {
@@ -93,6 +95,8 @@ private:
     VkShaderModule createShaderModule(const std::vector<char>& code);
     void createRenderPass();
     void createFramebuffers();
+    void createCommandPool();
+    void createCommandBuffer();
 public:
     void run();
 };
