@@ -97,7 +97,7 @@ private:
     void createFramebuffers();
     void createCommandPool();
     void createCommandBuffer();
-    void recordCommandBuffer();
+    void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 public:
     void run();
 };

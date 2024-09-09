@@ -776,9 +776,60 @@ void renderApp::createCommandBuffer()
         throw std::runtime_error("Failed to allocate command buffers!");
 }
 
-void renderApp::recordCommandBuffer()
+void renderApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
-    
+    VkCommandBufferBeginInfo commandBufferBeginInfo{};
+    commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    commandBufferBeginInfo.flags = 0;                   //Optional: Specifies how we use the command buffer
+    commandBufferBeginInfo.pInheritanceInfo = nullptr;  //Optional: Only useful for secondary command buffers. It specifies which state to inherit from the calling primary command buffers.
+
+    if (vkBeginCommandBuffer(mCommandBuffer, &commandBufferBeginInfo) != VK_SUCCESS)    //If the command buffer was recorded already, then a new call to vkBeginCommandBuffer resets it. It does NOT append commands to a buffer.
+        throw std::runtime_error("Failed to begin recording command buffers!");
+
+    VkRenderPassBeginInfo renderPassBeginInfo{};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = mRenderPass;                           //The render pass
+    renderPassBeginInfo.framebuffer = mSwapChainFramebuffers[imageIndex];   //The attachments to bind to the render pass
+
+    //We have a framebuffer for each swap chain image where each is specified as a color attachment
+    //We need to bind the framebuffer for the swap chain image we want to draw to by uysing the imageIndex
+    renderPassBeginInfo.renderArea.offset = { 0, 0 };
+    renderPassBeginInfo.renderArea.extent = mSwapChainExtent;   //These values define where shader loads and stores take place. Pixels outside are undefined. Should match the size of the attachments for best performance.
+
+    VkClearValue clearColor = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
+    renderPassBeginInfo.clearValueCount = 1;
+    renderPassBeginInfo.pClearValues = &clearColor;     //These parameters define the clear values VK_ATTACHMENT_LOAD_OP_CLEAR which was used as load operation for color attachment
+
+    //All functions that record commands (vkCmd) return void, so there is no error handling for these
+    vkCmdBeginRenderPass(mCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE); //This begins the render pass and specifies how the drawing commands within the render pass are provided. 
+                                                                                            //Render pass commands are embedded in the primary command buffer with no secondary command buffers being executed.
+
+    //This tells Vulkan which operations to execute in the graphics pipeline and which attachment to use in the fragment shader
+    vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline); //Specify if the pipeline is compute or graphics
+
+    //Set the viewport for the command buffer
+    VkViewport viewport{};
+    viewport.x, viewport.y = 0.0f;
+    viewport.width = static_cast<float>(mSwapChainExtent.width);
+    viewport.height = static_cast<float>(mSwapChainExtent.height);    
+    viewport.minDepth = 0.0f,
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
+
+    //Set the scissor state for the command buffer
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = mSwapChainExtent;
+    vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
+
+    //Issue the draw command (commandBuffer, vertices, instances, first vertex, first instance)
+    vkCmdDraw(mCommandBuffer, 3, 1, 0, 0);
+
+    //End the render pass
+    vkCmdEndRenderPass(mCommandBuffer);
+
+    if (vkEndCommandBuffer(mCommandBuffer) != VK_SUCCESS)
+        throw std::runtime_error("Failed to record command buffer!");
 }
 
 void renderApp::run()
