@@ -97,6 +97,7 @@ private:
     void createFramebuffers();
     void createCommandPool();
     void createCommandBuffer();
+    void recordCommandBuffer();
 public:
     void run();
 };

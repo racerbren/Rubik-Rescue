@@ -766,7 +766,19 @@ void renderApp::createCommandPool()
 
 void renderApp::createCommandBuffer()
 {
+    VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
+    commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    commandBufferAllocateInfo.commandPool = mCommandPool;
+    commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;                  //Allows command buffer to be directly submitted to a queue, but not called from other command buffers.
+    commandBufferAllocateInfo.commandBufferCount = 1;
+    
+    if (vkAllocateCommandBuffers(mDevice, &commandBufferAllocateInfo, &mCommandBuffer) != VK_SUCCESS)
+        throw std::runtime_error("Failed to allocate command buffers!");
+}
 
+void renderApp::recordCommandBuffer()
+{
+    
 }
 
 void renderApp::run()
