@@ -45,6 +45,7 @@ void renderApp::loop()
                 running = false;
         drawFrame();
     }
+    vkDeviceWaitIdle(mDevice);
 }
 
 void renderApp::clean()
