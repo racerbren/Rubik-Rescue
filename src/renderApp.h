@@ -66,9 +66,9 @@ private:
     std::vector<VkFramebuffer> mSwapChainFramebuffers;
     VkCommandPool mCommandPool;
     VkCommandBuffer mCommandBuffer;
-    VkSemaphore swapchainSemaphore;
-    VkSemaphore renderingSemaphore;
-    VkFence inFlightFence;
+    VkSemaphore mSwapchainSemaphore;
+    VkSemaphore mRenderingSemaphore;
+    VkFence mInFlightFence;
 
     const std::vector<const char*> mDeviceExtensions = 
     {

@@ -50,9 +50,9 @@ void renderApp::loop()
 void renderApp::clean()
 {
     //Destroy Semaphores and Fence
-    vkDestroySemaphore(mDevice, swapchainSemaphore, nullptr);
-    vkDestroySemaphore(mDevice, renderingSemaphore, nullptr);
-    vkDestroyFence(mDevice, inFlightFence, nullptr);
+    vkDestroySemaphore(mDevice, mSwapchainSemaphore, nullptr);
+    vkDestroySemaphore(mDevice, mRenderingSemaphore, nullptr);
+    vkDestroyFence(mDevice, mInFlightFence, nullptr);
 
     //Destroy the command pool
     vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
@@ -724,12 +724,23 @@ void renderApp::createRenderPass()
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
 
+    //Set up subpass dependency
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = 1;
     renderPassInfo.pAttachments = &colorAttachment;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
 
     if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS)
         throw std::runtime_error("Failed to create a render pass!");
@@ -842,12 +853,12 @@ void renderApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imag
 void renderApp::drawFrame()
 {
     //Wait for host to signal all fences, then reset the fence to an unsignaled state
-    vkWaitForFences(mDevice, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(mDevice, 1, &inFlightFence);
+    vkWaitForFences(mDevice, 1, &mInFlightFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(mDevice, 1, &mInFlightFence);
 
     //Acquire image from the swapchain
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(mDevice, mSwapChain, UINT64_MAX, swapchainSemaphore, VK_NULL_HANDLE, &imageIndex);    //When image is fetched, signal the swapchain semaphore
+    vkAcquireNextImageKHR(mDevice, mSwapChain, UINT64_MAX, mSwapchainSemaphore, VK_NULL_HANDLE, &imageIndex);    //When image is fetched, signal the swapchain semaphore
 
     //Reset the command buffer to allow for recording, then record the command buffer
     vkResetCommandBuffer(mCommandBuffer, 0);
@@ -856,7 +867,7 @@ void renderApp::drawFrame()
     //Prepare to submit the command buffer
     VkSubmitInfo commandBufferSubmitInfo{};
     commandBufferSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    VkSempahore waitSemaphores[] = { swapChainSemaphore };
+    VkSemaphore waitSemaphores[] = { mSwapchainSemaphore };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };  //Stage of the pipeline that write to color attachment
     commandBufferSubmitInfo.waitSemaphoreCount = 1;
     commandBufferSubmitInfo.pWaitSemaphores = waitSemaphores;   //Specify which semaphores to wait on
@@ -864,13 +875,26 @@ void renderApp::drawFrame()
     commandBufferSubmitInfo.commandBufferCount = 1;
     commandBufferSubmitInfo.pCommandBuffers = &mCommandBuffer;  //Specify which command buffer to submit
 
-    VkSemaphore signalSemaphores[] = { renderingSemaphore };
+    VkSemaphore signalSemaphores[] = { mRenderingSemaphore };
     commandBufferSubmitInfo.signalSemaphoreCount = 1;
     commandBufferSubmitInfo.pSignalSemaphores = signalSemaphores; //Specify which semaphore to signal once the command buffer finishes executing
 
     //Submit the command buffer to the graphcis queue, specifying the fence to signal in order to tell if the command buffer can be reused
-    if (vkQueueSubmit(mGraphicsQueue, 1, &commandBufferSubmitInfo, inFlightFence) != VK_SUCCESS)
+    if (vkQueueSubmit(mGraphicsQueue, 1, &commandBufferSubmitInfo, mInFlightFence) != VK_SUCCESS)
         throw std::runtime_error("Failed to submit draw command buffer!");
+
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores; //Specify which semaphore to wait on before presentation
+
+    VkSwapchainKHR swapChains[] = { mSwapChain };
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pResults = nullptr; //Optional: allows for speficication of an array of VK_RESULT values to check if each swapchain presentation was successful or not. More useful when using more than one swapchain
+
+    vkQueuePresentKHR(mPresentQueue, &presentInfo); //Submit request to present image to swap chain
 }
 
 void renderApp::createSyncObjects()
@@ -882,9 +906,9 @@ void renderApp::createSyncObjects()
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;   //Create fence in signaled state so that the first frame returns immediately
 
-    if (vkCreateSemaphore(mDevice, &semaphoreCreateInfo, nullptr, &swapchainSemaphore) != VK_SUCCESS ||
-        vkCreateSemaphore(mDevice, &semaphoreCreateInfo, nullptr, &renderingSemaphore) != VK_SUCCESS ||
-        vkCreateFence(mDevice, &fenceCreateInfo, nullptr, &inFlightFence) != VK_SUCCESS)
+    if (vkCreateSemaphore(mDevice, &semaphoreCreateInfo, nullptr, &mSwapchainSemaphore) != VK_SUCCESS ||
+        vkCreateSemaphore(mDevice, &semaphoreCreateInfo, nullptr, &mRenderingSemaphore) != VK_SUCCESS ||
+        vkCreateFence(mDevice, &fenceCreateInfo, nullptr, &mInFlightFence) != VK_SUCCESS)
         throw std::runtime_error("Failed to create synchronization objects!");
 }
 
