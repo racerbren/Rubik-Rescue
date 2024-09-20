@@ -66,6 +66,9 @@ private:
     std::vector<VkFramebuffer> mSwapChainFramebuffers;
     VkCommandPool mCommandPool;
     VkCommandBuffer mCommandBuffer;
+    VkSemaphore swapchainSemaphore;
+    VkSemaphore renderingSemaphore;
+    VkFence inFlightFence;
 
     const std::vector<const char*> mDeviceExtensions = 
     {
@@ -98,6 +101,8 @@ private:
     void createCommandPool();
     void createCommandBuffer();
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+    void drawFrame();
+    void createSyncObjects();
 public:
     void run();
 };
